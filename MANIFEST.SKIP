@@ -15,3 +15,4 @@ CVS
 t/devel
 ~$
 DS_Store
+^.git

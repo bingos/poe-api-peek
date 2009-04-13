@@ -28,7 +28,7 @@ use 5.006001;
 use warnings;
 use strict;
 
-our $VERSION = '2.13';
+our $VERSION = '2.14';
 
 BEGIN {
 	use POE;

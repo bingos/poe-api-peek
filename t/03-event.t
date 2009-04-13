@@ -59,7 +59,9 @@ sub _start {
 # }}}
 
 # event_queue_dump {{{
-    if($POE::VERSION >= '0.31') {
+	my $ver = $POE::VERSION;
+	$ver =~ s/_.+$//;
+    if($ver >= '0.31') {
         $_[KERNEL]->yield('dummy');
 
         my @queue;

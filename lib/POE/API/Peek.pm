@@ -32,8 +32,10 @@ our $VERSION = '2.13';
 
 BEGIN {
 	use POE;
-	if($POE::VERSION < '1.0001') {
-		die(__PACKAGE__." is only certified for POE version 1.0001 and up and you are running POE version " . $POE::VERSION . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
+	my $ver = $POE::VERSION;
+	$ver =~ s/_.+$//;
+	if($ver < '1.0001') {
+		die(__PACKAGE__." is only certified for POE version 1.0001 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
 	}
 }
 

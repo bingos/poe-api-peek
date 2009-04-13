@@ -667,7 +667,9 @@ sub event_queue_dump {
 		} elsif ($type & POE::Kernel::ET_SELECT()) {
 			$type_str = 'File Activity';
 		} else {
-			if($POE::VERSION <= 0.27) {
+			my $ver = $POE::VERSION;
+			$ver =~ s/_.+$//;
+			if($ver <= 0.27) {
 				if($type & POE::Kernel::ET_USER()) {
 					$type_str = 'User';
 				} else {

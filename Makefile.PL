@@ -10,7 +10,9 @@ license         ('bsd');
 requires        ('perl' => 5.006001);
 requires        ('POE'  => 1.0001);
 requires        ('Devel::Size');
-requires        ('Test::More');
+
+test_requires   ('Test::More');
+test_requires   ('Test::NoWarnings');
 
 build_requires  ('Test::Distribution');
 build_requires  ('Test::Pod::Coverage');

@@ -1,7 +1,18 @@
 
 # Tests for event related code. See code block labeled "Event fun"
+BEGIN {
+	use POE;
+	if($POE::VERSION >= '1.289') {
+		eval "
+			use Test::More skip_all => 'POE v1.289 and above have a dual event queue which breaks all outside access to the event queue';
+		"
+	} else {
+		eval "
+			use Test::More tests => 12;
+		"
+	}
+}
 
-use Test::More tests => 12;
 
 use warnings;
 use strict;

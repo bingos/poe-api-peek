@@ -28,7 +28,7 @@ use 5.006001;
 use warnings;
 use strict;
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 
 BEGIN {
@@ -537,6 +537,24 @@ sub session_id_loggable {
 
 =head1 EVENT UTILITIES
 
+=head2 BREAKAGE ALERT
+
+POE v1.289 introduced a dual event queue system. All non-alarm events
+are no longer put on the normal event queue but kept in a lexical queue
+deep inside of POE.
+
+The dual queue means that, while POE::API::Peek can access the event
+queue, only alarms will be found there. For most normal purposes, the
+event utilities in POE::API::Peek are useless for POE versions 1.289 or
+greater.
+
+If POE::API::Peek is used under one of these broken POEs, it will emit a
+warning (via Carp) the first time an event utility is used. You will
+see:
+
+C<POE v1.289 and above have a broken dual event queue that renders the
+event API in POE::API::Peek mostly useless. at your_code.pl line 15>
+
 =cut
 
 sub _broken_poe_event_bitch {
@@ -982,7 +1000,7 @@ __END__
 
 =over 4
 
-=item Copyright (c) 2003 - 2008, Matt Cashner. 
+=item Copyright (c) 2003 - 2008, 2010, Matt Cashner. 
 
 =item Copyright (c) 2008, Yuval Kogman
 

@@ -1,8 +1,7 @@
 
 # Tests for session related api. see code block marked "Session fun".
 
-use Test::More tests => 4;
-use Test::NoWarnings;
+use Test::More tests => 3;
 
 use warnings;
 use strict;

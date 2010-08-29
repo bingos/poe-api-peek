@@ -188,6 +188,23 @@ ALIAS UTILITIES
     default to the currently active session. Returns a string.
 
 EVENT UTILITIES
+  BREAKAGE ALERT
+    POE v1.289 introduced a dual event queue system. All non-alarm events
+    are no longer put on the normal event queue but kept in a lexical queue
+    deep inside of POE.
+
+    The dual queue means that, while POE::API::Peek can access the event
+    queue, only alarms will be found there. For most normal purposes, the
+    event utilities in POE::API::Peek are useless for POE versions 1.289 or
+    greater.
+
+    If POE::API::Peek is used under one of these broken POEs, it will emit a
+    warning (via Carp) the first time an event utility is used. You will
+    see:
+
+    "POE v1.289 and above have a broken dual event queue that renders the
+    event API in POE::API::Peek mostly useless. at your_code.pl line 15"
+
   event_count_to
       my $count = $api->event_count_to($session);
       my $count = $api->event_count_to();
@@ -333,10 +350,10 @@ SIGNAL UTILITIES
 
 AUTHORS
     Matt Cashner (sungo@pobox.com)
-    Yuvol Kogman (nothingmuch@woobling.org)
+    Yuval Kogman (nothingmuch@woobling.org)
 
 LICENSE
-    Copyright (c) 2003 - 2008, Matt Cashner.
+    Copyright (c) 2003 - 2008, 2010, Matt Cashner.
     Copyright (c) 2008, Yuval Kogman
 
     Redistribution and use in source and binary forms, with or without

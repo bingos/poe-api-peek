@@ -30,6 +30,7 @@ use strict;
 
 our $VERSION = '2.15';
 
+
 BEGIN {
 	use POE;
 	my $ver = $POE::VERSION;
@@ -37,11 +38,19 @@ BEGIN {
 	if($ver < '1.0001') {
 		die(__PACKAGE__." is only certified for POE version 1.0001 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
 	}
+	if($ver >= '1.289') {
+		eval "use constant BROKEN_POE_EVENT_QUEUE => 1;"
+	} else {
+		eval "use constant BROKEN_POE_EVENT_QUEUE => 0;"
+	}
 }
 
 use POE;
 use Devel::Size qw(total_size);
 $Devel::Size::warn = 0;
+
+use Carp;
+our @CARP_NOT = qw(__PACKAGE__);
 
 # new {{{
 
@@ -53,7 +62,13 @@ Returns a blessed reference. Takes no parameters.
 
 =cut
 
-sub new { return bless {}, shift; }
+sub new { 
+	my $class = shift;
+	my $self = {
+		broken_event_queue_bitch => 0,
+	};
+	return bless $self, $class; 
+}
 
 # }}}
 
@@ -524,6 +539,14 @@ sub session_id_loggable {
 
 =cut
 
+sub _broken_poe_event_bitch {
+	my $self = shift;
+	return if $self->{broken_event_queue_bitch};
+	carp("POE v1.289 and above have a broken dual event queue that renders the event API in POE::API::Peek mostly useless.");
+	$self->{broken_event_queue_bitch}++;
+	return;
+}
+
 # event_count_to {{{
 
 =head2 event_count_to
@@ -540,6 +563,8 @@ current session. Returns an integer.
 sub event_count_to {
 	my $self = shift;
 	my $session = shift || $self->current_session();
+
+	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	return $poe_kernel->_data_ev_get_count_to($session);    
 }
 #}}}
@@ -560,6 +585,8 @@ current session. Return an integer.
 sub event_count_from {
 	my $self = shift;
 	my $session = shift || $self->current_session();
+
+	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	return $poe_kernel->_data_ev_get_count_from($session);    
 }
 
@@ -576,7 +603,11 @@ containing a reference to a POE::Queue::Array object.
 
 =cut
 
-sub event_queue { return $poe_kernel->[POE::Kernel::KR_QUEUE] }
+sub event_queue { 
+	my $self = shift;
+	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
+	return $poe_kernel->[POE::Kernel::KR_QUEUE] 
+}
 
 # }}}
 
@@ -629,6 +660,8 @@ Unknown.
 sub event_queue_dump { 
 	my $self = shift;
 	my $queue = $self->event_queue;
+
+	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	my @happy_queue;
 	my @queue = $queue->peek_items(sub { return 1; });
 

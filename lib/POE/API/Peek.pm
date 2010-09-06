@@ -527,34 +527,6 @@ sub session_id_loggable {
 
 =head1 EVENT UTILITIES
 
-=head2 BREAKAGE ALERT
-
-POE v1.289 introduced a dual event queue system. All non-alarm events
-are no longer put on the normal event queue but kept in a lexical queue
-deep inside of POE.
-
-The dual queue means that, while POE::API::Peek can access the event
-queue, only alarms will be found there. For most normal purposes, the
-event utilities in POE::API::Peek are useless for POE versions 1.289 or
-greater.
-
-If POE::API::Peek is used under one of these broken POEs, it will emit a
-warning (via Carp) the first time an event utility is used. You will
-see:
-
-C<POE v1.289 and above have a broken dual event queue that renders the
-event API in POE::API::Peek mostly useless. at your_code.pl line 15>
-
-=cut
-
-sub _broken_poe_event_bitch {
-	my $self = shift;
-	return if $self->{broken_event_queue_bitch};
-	carp("POE v1.289 and above have a broken dual event queue that renders the event API in POE::API::Peek mostly useless.");
-	$self->{broken_event_queue_bitch}++;
-	return;
-}
-
 # event_count_to {{{
 
 =head2 event_count_to
@@ -571,8 +543,6 @@ current session. Returns an integer.
 sub event_count_to {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-
-	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	return $poe_kernel->_data_ev_get_count_to($session);    
 }
 #}}}
@@ -593,8 +563,6 @@ current session. Return an integer.
 sub event_count_from {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-
-	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	return $poe_kernel->_data_ev_get_count_from($session);    
 }
 
@@ -612,8 +580,6 @@ containing a reference to a POE::Queue::Array object.
 =cut
 
 sub event_queue { 
-	my $self = shift;
-	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	return $poe_kernel->[POE::Kernel::KR_QUEUE] 
 }
 
@@ -669,7 +635,6 @@ sub event_queue_dump {
 	my $self = shift;
 	my $queue = $self->event_queue;
 
-	$self->_broken_poe_event_bitch if BROKEN_POE_EVENT_QUEUE;
 	my @happy_queue;
 	my @queue = $queue->peek_items(sub { return 1; });
 

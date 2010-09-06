@@ -12,7 +12,7 @@ POE debugging.
 
 =head1 WARNING
 
-B<This version of this module is certified against POE version 1.0001 and 
+B<This version of this module is certified against POE version 1.293 and 
 above. It will fail on any other POE version.>
 
 B<Further, this module requires perl v5.6.1 or above.>
@@ -30,13 +30,8 @@ BEGIN {
 	use POE;
 	my $ver = $POE::VERSION;
 	$ver =~ s/_.+$//;
-	if($ver < '1.0001') {
-		die(__PACKAGE__." is only certified for POE version 1.0001 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
-	}
-	if($ver >= '1.289') {
-		eval "use constant BROKEN_POE_EVENT_QUEUE => 1;"
-	} else {
-		eval "use constant BROKEN_POE_EVENT_QUEUE => 0;"
+	if($ver < '1.293') {
+		die(__PACKAGE__." is only certified for POE version 1.293 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
 	}
 }
 

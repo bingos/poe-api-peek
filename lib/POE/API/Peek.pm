@@ -673,22 +673,12 @@ sub event_queue_dump {
 		} elsif ($type & POE::Kernel::ET_SELECT()) {
 			$type_str = 'File Activity';
 		} else {
-			my $ver = $POE::VERSION;
-			$ver =~ s/_.+$//;
-			if($ver <= 0.27) {
-				if($type & POE::Kernel::ET_USER()) {
-					$type_str = 'User';
-				} else {
-					$type_str = 'Unknown';
-				}
+			if($type & POE::Kernel::ET_POST()) {
+				$type_str = 'User';
+			} elsif ($type & POE::Kernel::ET_CALL()) {
+				$type_str = 'User (not enqueued)';
 			} else {
-				if($type & POE::Kernel::ET_POST()) {
-					$type_str = 'User';
-				} elsif ($type & POE::Kernel::ET_CALL()) {
-					$type_str = 'User (not enqueued)';
-				} else {
-					$type_str = 'Unknown';
-				}
+				$type_str = 'Unknown';
 			}
 		}
         

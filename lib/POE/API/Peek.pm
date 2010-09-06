@@ -802,6 +802,14 @@ sub session_handle_count {
 
 =head1 SIGNAL UTILITIES
 
+POTENTIAL BREAKAGE NOTE: In POE v1.293 (in particular: svn rev 2916)
+changed the structure of signals. Previously, the data portion of a
+signal was simply the name of the event to be called. Now it contains a
+data portion, continuation style arguments that may be passed on to the
+signal handler.
+
+See the L<POE::Kernel> documentation for more info.
+
 =cut
 
 # get_safe_signals {{{
@@ -877,7 +885,15 @@ as the value.
 sub signals_watched_by_session {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_sig_watched_by_session($session);
+	my %sigs = $poe_kernel->_data_sig_watched_by_session($session);
+
+	my %ret;
+	foreach my $k (keys %sigs) {
+		my $ev = $sigs{$k}[0];
+		$ret{$k} = $ev;
+	}
+
+	return %ret;
 }
 # }}}
 
@@ -896,7 +912,15 @@ reference with an event name as the value.
 sub signal_watchers {
 	my $self = shift;
 	my $sig = shift or return undef;
-	return $poe_kernel->_data_sig_watchers($sig);
+	my %sigs = $poe_kernel->_data_sig_watchers($sig);
+
+	my %ret;
+	foreach my $k (keys %sigs) {
+		my $ev = $sigs{$k}[0];
+		$ret{$k} = $ev;
+	}
+
+	return %ret;
 }
 # }}}
 

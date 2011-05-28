@@ -30,18 +30,20 @@ sub _start {
     my $api = $_[HEAP]->{api};
     my $cur_sess;
 
+    my $sid = $sess->ID;
+
 # session_id_loggable {{{
     my $log_id;
     eval { $log_id = $api->session_id_loggable() };
     ok(!$@, "session_id_loggable() causes no exceptions");
-    like($log_id, qr/session 2 \(POE::Session/, "session_id_loggable() returns proper string when no alias");
+    like($log_id, qr/session $sid/, "session_id_loggable() returns proper string when no alias");
     
     $_[KERNEL]->alias_set('PIE');
     
     $log_id = undef;
     eval { $log_id = $api->session_id_loggable() };
     ok(!$@, "session_id_loggable() causes no exceptions");
-    like($log_id, qr/session 2 \(PIE/, "session_id_loggable() returns proper string when alias is set");
+    like($log_id, qr/session $sid \(PIE/, "session_id_loggable() returns proper string when alias is set");
 
 # }}}
 

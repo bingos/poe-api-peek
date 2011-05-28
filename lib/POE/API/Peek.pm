@@ -231,7 +231,7 @@ POE::Session objects.
 sub get_session_children {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_get_children($session);
+	return $poe_kernel->_data_ses_get_children($session->ID);
 }
 # }}}
 
@@ -255,7 +255,7 @@ sub is_session_child {
 	my $self = shift;
 	my $parent = shift or return undef;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_is_child($parent, $session);
+	return $poe_kernel->_data_ses_is_child($parent->ID, $session->ID);
 }
 # }}}
 
@@ -275,7 +275,7 @@ the currently active session. Returns a POE::Session object.
 sub get_session_parent {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_get_parent($session);
+	return $poe_kernel->_data_ses_get_parent($session->ID);
 }
 # }}}
 
@@ -338,7 +338,7 @@ will default to the currently active session. Returns an integer.
 sub get_session_refcount {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_refcount($session);
+	return $poe_kernel->_data_ses_refcount($session->ID);
 }
 # }}}
 
@@ -477,7 +477,7 @@ will default to the currently active session. Returns a list of strings.
 sub session_alias_list {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_list($session);
+	return $poe_kernel->_data_alias_list($session->ID);
 }
 # }}}
 
@@ -497,7 +497,7 @@ will default to the currently active session. Returns an integer.
 sub session_alias_count {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_count_ses($session);
+	return $poe_kernel->_data_alias_count_ses($session->ID);
 }
 # }}}
 
@@ -517,7 +517,7 @@ default to the currently active session. Returns a string.
 sub session_id_loggable {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_loggable($session);
+	return $poe_kernel->_data_alias_loggable($session->ID);
 }
 # }}}
 
@@ -885,7 +885,7 @@ as the value.
 sub signals_watched_by_session {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	my %sigs = $poe_kernel->_data_sig_watched_by_session($session);
+	my %sigs = $poe_kernel->_data_sig_watched_by_session($session->ID);
 
 	my %ret;
 	foreach my $k (keys %sigs) {
@@ -917,7 +917,7 @@ sub signal_watchers {
 	my %ret;
 	foreach my $k (keys %sigs) {
 		my $ev = $sigs{$k}[0];
-		$ret{$k} = $ev;
+		$ret{$poe_kernel->alias_resolve($k)} = $ev;
 	}
 
 	return %ret;
@@ -942,7 +942,7 @@ sub is_signal_watched_by_session {
 	my $self = shift;
 	my $signal = shift or return undef;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_sig_is_watched_by_session($signal, $session);
+	return $poe_kernel->_data_sig_is_watched_by_session($signal, $session->ID);
 }
 # }}}
 

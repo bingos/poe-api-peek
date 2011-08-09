@@ -826,6 +826,10 @@ sub session_handle_count {
 
 # PID Fun {{{
 
+=head1 PID UTILITIES
+
+=cut
+
 # session_pid_count {{{
 
 =head2 session_pid_count

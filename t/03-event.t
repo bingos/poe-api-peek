@@ -5,7 +5,7 @@ use warnings;
 use strict;
 use POE;
 use Data::Dumper;
-use Test::More tests => 12;
+use Test::More tests => 20;
 
 use_ok('POE::API::Peek');
 
@@ -34,6 +34,21 @@ sub _start {
     eval { $to_count = $api->event_count_to() };
     ok(!$@, "event_count_to() causes no exceptions");
     is($to_count, 0, 'event_count_to() returns proper count');
+	POE::Session->create(
+		inline_states => {
+			_start => sub {
+                my $new_to_count;
+                eval { $new_to_count = $api->event_count_to($sess) };
+                ok(!$@, "event_count_to(session) causes no exceptions");
+                is($new_to_count, $to_count, 'event_count_to(session) returns proper count');
+                eval { $new_to_count = $api->event_count_to($sess->ID) };
+                ok(!$@, "event_count_to(ID) causes no exceptions");
+                is($new_to_count, $to_count, 'event_count_to(ID) returns proper count');
+            },
+            _stop => sub {}
+        }
+    );
+
 # }}}
 
 # event_count_from {{{
@@ -41,6 +56,20 @@ sub _start {
     eval { $from_count = $api->event_count_from() };
     ok(!$@, "event_count_from() causes no exceptions");
     is($from_count, 0, 'event_count_from() returns proper count');
+	POE::Session->create(
+		inline_states => {
+			_start => sub {
+                my $new_from_count;
+                eval { $new_from_count = $api->event_count_from($sess) };
+                ok(!$@, "event_count_from(session) causes no exceptions");
+                is($new_from_count, $from_count, 'event_count_from(session) returns proper count');
+                eval { $new_from_count = $api->event_count_from($sess->ID) };
+                ok(!$@, "event_count_from(ID) causes no exceptions");
+                is($new_from_count, $from_count, 'event_count_from(ID) returns proper count');
+            },
+            _stop => sub {}
+        }
+    );
 # }}}
 
 # event_queue {{{
@@ -66,9 +95,10 @@ sub _start {
         my @queue;
         eval { @queue = $api->event_queue_dump() };
         ok(!$@, "event_queue_dump() causes no exceptions: $@");
-        is(scalar @queue, 1, "event_queue_dump() returns the right number of items");
+        # 3 = GC the temp sessions (2) + our dummy
+        is(scalar @queue, 3, "event_queue_dump() returns the right number of items");
 
-        my $item = $queue[0];
+        my $item = $queue[-1];
         is($item->{type}, 'User', 'event_queue_dump() item has proper type');
         is($item->{event}, 'dummy', 'event_queue_dump() item has proper event name');
         is($item->{source}, $item->{destination}, 'event_queue_dump() item has proper source and destination');
@@ -84,7 +114,7 @@ sub _start {
         is($item->{source}, $item->{destination}, 'event_queue_dump() item has proper source and destination');
     }
 # }}}
-    
+
 }
 
 

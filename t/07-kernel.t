@@ -36,7 +36,7 @@ sub _start {
 	eval { $size = $api->kernel_memory_size() };
 	is($@, '', "kernel_memory_size() causes no exceptions");
 
-	# we can't really test this value much since its going to be different on 
+	# we can't really test this value much since its going to be different on
 	# every system, and even between runs
 
 	ok(defined $size, "kernel_memory_size() returns data");

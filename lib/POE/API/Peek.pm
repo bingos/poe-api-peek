@@ -8,11 +8,11 @@ to Kernel internals in a cross-version compatible manner. Other
 calculated data is also available.
 
 My intention is to provide massive amounts of internal data for use in
-POE debugging. 
+POE debugging.
 
 =head1 WARNING
 
-B<This version of this module is certified against POE version 1.293 and 
+B<This version of this module is certified against POE version 1.293 and
 above. It will fail on any other POE version.>
 
 B<Further, this module requires perl v5.6.1 or above.>
@@ -30,8 +30,8 @@ BEGIN {
 	use POE;
 	my $ver = $POE::VERSION;
 	$ver =~ s/_.+$//;
-	if($ver < '1.293') {
-		die(__PACKAGE__." is only certified for POE version 1.293 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
+	if($ver < '1.300') {
+		die(__PACKAGE__." is only certified for POE version 1.300 and up and you are running POE version " . $ver . ". Check CPAN for an appropriate version of ".__PACKAGE__.".");
 	}
 }
 
@@ -52,12 +52,12 @@ Returns a blessed reference. Takes no parameters.
 
 =cut
 
-sub new { 
+sub new {
 	my $class = shift;
 	my $self = {
 		broken_event_queue_bitch => 0,
 	};
-	return bless $self, $class; 
+	return bless $self, $class;
 }
 
 # }}}
@@ -91,7 +91,7 @@ sub id { return $poe_kernel->ID }
       # do stuff...
   }
 
-Tell if the POE Kernel is running and active. Returns 1 if the Kernel is 
+Tell if the POE Kernel is running and active. Returns 1 if the Kernel is
 running and 0 if it is not.
 
 =cut
@@ -118,8 +118,8 @@ Get the active event name. Returns a string containing the event name.
 
 =cut
 
-sub active_event { 
-	return ${ $poe_kernel->[ POE::Kernel::KR_ACTIVE_EVENT() ] }; 
+sub active_event {
+	return ${ $poe_kernel->[ POE::Kernel::KR_ACTIVE_EVENT() ] };
 }
 
 #}}}
@@ -147,14 +147,14 @@ sub kernel_memory_size {
   my $events = $api->event_list();
 
 Gets the list of events for the whole POE environment. Returns a hash
-with the session IDs as the keys and a list of events as the 
+with the session IDs as the keys and a list of events as the
 values.
 
 =cut
 
 sub event_list {
 	my $self = shift;
-   
+
 	my %events;
 	foreach my $session_ref (keys %{ $poe_kernel->[ &POE::Kernel::KR_SESSIONS() ] }) {
 		my $session = $poe_kernel->[ &POE::Kernel::KR_SESSIONS() ]->{ $session_ref }->[ &POE::Kernel::SS_SESSION() ];
@@ -207,7 +207,7 @@ parameters. Returns a scalar containing a reference.
 
 =cut
 
-# the value of KR_ACTIVE_SESSION is a ref to a scalar. so we deref it before 
+# the value of KR_ACTIVE_SESSION is a ref to a scalar. so we deref it before
 # handing it to the user.
 
 sub current_session { return ${ $poe_kernel->[POE::Kernel::KR_ACTIVE_SESSION] } }
@@ -218,11 +218,11 @@ sub current_session { return ${ $poe_kernel->[POE::Kernel::KR_ACTIVE_SESSION] } 
 
 =head2 get_session_children
 
-    my @children = $api->get_session_children($session);
+    my @children = $api->get_session_children($session_id);
     my @children = $api->get_session_children();
 
 Get the children (if any) for a given session. Takes one optional
-parameter, a POE::Session object. If this parameter is not provided, the
+parameter, a POE::Session object or ID. If this parameter is not provided, the
 method defaults to the currently active session. Returns a list of
 POE::Session objects.
 
@@ -231,7 +231,8 @@ POE::Session objects.
 sub get_session_children {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_get_children($session->ID);
+	my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ses_get_children($sid);
 }
 # }}}
 
@@ -239,6 +240,7 @@ sub get_session_children {
 
 =head2 is_session_child
 
+  if($api->is_session_child($parent, $session_id)) { }
   if($api->is_session_child($parent, $session)) { }
   if($api->is_session_child($parent)) { }
 
@@ -247,15 +249,17 @@ mandatory parameter, a POE::Session object which is the potential parent
 session this method will interrogate. Takes one optional parameter, a
 POE::Session object which is the session whose parentage this method
 will determine. If this parameter is not specified, it will default to
-the currently active session. Returns a boolean. 
+the currently active session. Returns a boolean.
 
 =cut
 
 sub is_session_child {
 	my $self = shift;
 	my $parent = shift or return undef;
+	my $psid = ref $parent ? $parent->ID : $parent;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_is_child($parent->ID, $session->ID);
+	my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ses_is_child($psid, $sid);
 }
 # }}}
 
@@ -263,19 +267,21 @@ sub is_session_child {
 
 =head2 get_session_parent
 
+    my $parent = $api->get_session_parent($session_id);
     my $parent = $api->get_session_parent($session);
     my $parent = $api->get_session_parent();
 
 Get the parent for a given session. Takes one optional parameter, a
-POE::Session object. If this parameter is not provided, the method defaults to
-the currently active session. Returns a POE::Session object.
+POE::Session object or ID. If this parameter is not provided, the method
+defaults to the currently active session. Returns a POE::Session object.
 
 =cut
 
 sub get_session_parent {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_get_parent($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ses_get_parent($sid);
 }
 # }}}
 
@@ -296,8 +302,8 @@ POE::Session object on success; undef on failure.
 
 sub resolve_session_to_ref {
 	my $self = shift;
-	my $id = shift || $self->current_session()->ID;
-	return $poe_kernel->_data_sid_resolve($id);
+	my $sid = shift || $self->current_session()->ID;
+	return $poe_kernel->_data_sid_resolve($sid);
 }
 # }}}
 
@@ -309,7 +315,7 @@ sub resolve_session_to_ref {
   my $session_id = $api->resolve_session_to_id();
 
 Obtain the session id for a given POE::Session object. Takes one
-optional parameter, a POE::Session object. If this parameter is not
+optional parameter, a POE::Session object or ID. If this parameter is not
 specified, it will default to the currently active session. Returns an
 integer on success and undef on failure.
 
@@ -326,11 +332,12 @@ sub resolve_session_to_id {
 
 =head2 get_session_refcount
 
+  my $count = $api->get_session_refcount($session_id);
   my $count = $api->get_session_refcount($session);
   my $count = $api->get_session_refcount();
 
 Obtain the reference count for a given POE::Session. Takes one optional
-parameter, a POE::Session object. If this parameter is not specified, it
+parameter, a POE::Session object or ID. If this parameter is not specified, it
 will default to the currently active session. Returns an integer.
 
 =cut
@@ -338,7 +345,8 @@ will default to the currently active session. Returns an integer.
 sub get_session_refcount {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ses_refcount($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ses_refcount($sid);
 }
 # }}}
 
@@ -351,7 +359,7 @@ sub get_session_refcount {
 Obtain a count of how many sessions exist. Takes no parameters. Returns
 an integer.
 
-Note: for various reasons, the Kernel counts as a session. 
+Note: for various reasons, the Kernel counts as a session.
 
 =cut
 
@@ -393,9 +401,10 @@ sub session_list {
 
   my $size = $api->session_memory_size();
   my $size = $api->session_memory_size($session);
+  my $size = $api->session_memory_size($session_id);
 
 Get the memory footprint of a session. If no session is provided, the current
-session is used. See the Devel::Size documentation for several caveats 
+session is used. See the Devel::Size documentation for several caveats
 involved in this metric.
 
 =cut
@@ -403,6 +412,7 @@ involved in this metric.
 sub session_memory_size {
 	my $self = shift;
 	my $session = shift || $self->current_session();
+    $session = $poe_kernel->_data_sid_resolve($session) unless ref $session;
 	return total_size($session);
 }
 # }}}}
@@ -415,6 +425,8 @@ sub session_memory_size {
   my $events = $api->session_event_list();
   my @events = $api->session_event_list($session);
   my $events = $api->session_event_list($session);
+  my @events = $api->session_event_list($session_id);
+  my $events = $api->session_event_list($session_id);
 
 Get the list of events for a session. If no session is provided, the current
 session is used.
@@ -465,11 +477,12 @@ sub resolve_alias {
 
 =head2 session_alias_list
 
+  my @aliases = $api->session_alias_list($session_id);
   my @aliases = $api->session_alias_list($session);
   my @aliases = $api->session_alias_list();
 
 Obtain a list of aliases for a POE::Session object. Takes one optional
-parameter, a POE::Session object. If this parameter is not specified, it
+parameter, a POE::Session object or ID. If this parameter is not specified, it
 will default to the currently active session. Returns a list of strings.
 
 =cut
@@ -477,7 +490,8 @@ will default to the currently active session. Returns a list of strings.
 sub session_alias_list {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_list($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_alias_list($sid);
 }
 # }}}
 
@@ -485,11 +499,12 @@ sub session_alias_list {
 
 =head2 session_alias_count
 
+  my $count = $api->session_alias_count($session_id);
   my $count = $api->session_alias_count($session);
   my $count = $api->session_alias_count();
 
 Obtain the count of how many aliases a session has. Takes one optional
-parameter, a POE::Session object. If this parameter is not specified, it
+parameter, a POE::Session object or ID. If this parameter is not specified, it
 will default to the currently active session. Returns an integer.
 
 =cut
@@ -497,7 +512,8 @@ will default to the currently active session. Returns an integer.
 sub session_alias_count {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_count_ses($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_alias_count_ses($sid);
 }
 # }}}
 
@@ -505,11 +521,12 @@ sub session_alias_count {
 
 =head2 session_id_loggable
 
+    my $str = $api->session_id_loggable($session_id);
     my $str = $api->session_id_loggable($session);
     my $str = $api->session_id_loggable();
 
 Obtain a loggable version of a session id. Takes one optional parameter,
-a POE::Session object. If this parameter is not specified, it will
+a POE::Session object or ID. If this parameter is not specified, it will
 default to the currently active session. Returns a string.
 
 =cut
@@ -517,7 +534,8 @@ default to the currently active session. Returns a string.
 sub session_id_loggable {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_alias_loggable($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_alias_loggable($sid);
 }
 # }}}
 
@@ -531,11 +549,12 @@ sub session_id_loggable {
 
 =head2 event_count_to
 
+  my $count = $api->event_count_to($session_id);
   my $count = $api->event_count_to($session);
   my $count = $api->event_count_to();
 
 Get the number of events heading toward a particular session. Takes one
-parameter, a POE::Session object. if none is provided, defaults to the
+parameter, a POE::Session object or ID. if none is provided, defaults to the
 current session. Returns an integer.
 
 =cut
@@ -543,7 +562,8 @@ current session. Returns an integer.
 sub event_count_to {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ev_get_count_to($session);    
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ev_get_count_to($sid);
 }
 #}}}
 
@@ -551,11 +571,12 @@ sub event_count_to {
 
 =head2 event_count_from
 
+  my $count = $api->get_session_extref_count($session_id);
   my $count = $api->event_count_from($session);
   my $count = $api->event_count_from();
 
 Get the number of events heading out from a particular session. Takes one
-parameter, a POE::Session object. If non is provided, defaults to the 
+parameter, a POE::Session object or ID. If none is provided, defaults to the
 current session. Return an integer.
 
 =cut
@@ -563,7 +584,8 @@ current session. Return an integer.
 sub event_count_from {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_ev_get_count_from($session);    
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_ev_get_count_from($sid);
 }
 
 #}}}
@@ -579,8 +601,8 @@ containing a reference to a POE::Queue::Array object.
 
 =cut
 
-sub event_queue { 
-	return $poe_kernel->[POE::Kernel::KR_QUEUE] 
+sub event_queue {
+	return $poe_kernel->[POE::Kernel::KR_QUEUE]
 }
 
 # }}}
@@ -588,7 +610,7 @@ sub event_queue {
 # event_queue_dump {{{
 
 =head2 event_queue_dump
-    
+
   my @queue = $api->event_queue_dump();
 
 Dump the contents of the event queue in a nice understandable fashion.  Takes no
@@ -597,7 +619,7 @@ following entries:
 
 =over 4
 
-=item * ID 
+=item * ID
 
 The id number that POE's queue identifies this entry as.
 
@@ -625,13 +647,13 @@ Where this event is headed. Usually a POE::Session.
 
 The type of event this is. May have the value User, _start, _stop, _signal,
 _garbage_collect, _parent, _child, _sigchld_poll, Alarm, File Activity, or
-Unknown. 
+Unknown.
 
 =back
 
 =cut
 
-sub event_queue_dump { 
+sub event_queue_dump {
 	my $self = shift;
 	my $queue = $self->event_queue;
 
@@ -642,10 +664,10 @@ sub event_queue_dump {
 	foreach my $qitem (@queue) {
 		my $item = {};
 		my ($priority, $id, $payload) = @$qitem;
-		 
+
 		$item->{ID} = $id;
 		$item->{index} = $i++;
-		$item->{priority} = $priority; 
+		$item->{priority} = $priority;
 
 		my $ev_name = $payload->[POE::Kernel::EV_NAME()];
 		$item->{event} = $ev_name;
@@ -681,7 +703,7 @@ sub event_queue_dump {
 				$type_str = 'Unknown';
 			}
 		}
-        
+
 		$item->{type} = $type_str;
 		push @happy_queue, $item;
 	}
@@ -719,11 +741,12 @@ sub extref_count {
 
 =head2 get_session_extref_count
 
+  my $count = $api->get_session_extref_count($session_id);
   my $count = $api->get_session_extref_count($session);
   my $count = $api->get_session_extref_count();
 
 Obtain the number of extra references a session has. Takes one optional
-parameter, a POE::Session object. If this parameter is not specified, it
+parameter, a POE::Session object or ID. If this parameter is not specified, it
 will default to the currently active session. Returns an integer.
 
 =cut
@@ -731,7 +754,8 @@ will default to the currently active session. Returns an integer.
 sub get_session_extref_count {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_extref_count_ses($session);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_extref_count_ses($sid);
 }
 # }}}
 
@@ -778,13 +802,14 @@ sub handle_count {
 
 # session_handle_count {{{
 
-=head2 session_handle_count 
+=head2 session_handle_count
 
+  my $count = $api->session_handle_count($session_id);
   my $count = $api->session_handle_count($session);
   my $count = $api->session_handle_count();
 
 Obtain a count of the active handles for a given session. Takes one
-optional parameter, a POE::Session object. If this parameter is not
+optional parameter, a POE::Session object or ID. If this parameter is not
 supplied, it will default to the currently active session.
 
 =cut
@@ -792,11 +817,40 @@ supplied, it will default to the currently active session.
 sub session_handle_count {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_handle_count_ses($session);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_handle_count_ses($sid);
 }
 # }}}
 
 # }}}
+
+# PID Fun {{{
+
+# session_pid_count {{{
+
+=head2 session_pid_count
+
+    my $count = $api->session_pid_count($session_id);
+    my $count = $api->session_pid_count($session);
+    my $count = $api->session_pid_count();
+
+Obtain a count of the process IDs being watched by a session. Takes one
+optional parameter, a POE::Session object or ID. If this parameter is not
+supplied, it will default to the currently active session.
+
+=cut
+
+sub session_pid_count {
+    my $self = shift;
+    my $session = shift || $self->current_session();
+    my $sid = ref $session ? $session->ID : $session;
+    return $poe_kernel->_data_sig_pids_ses($sid);
+}
+
+# }}}
+
+# }}}
+
 
 # Signals Fun {{{
 
@@ -875,7 +929,7 @@ sub is_signal_watched {
   my %signals = $api->signals_watched_by_session();
 
 Get the signals watched by a session and the events they generate. Takes
-one optional parameter, a POE::Session object. If this parameter is not
+one optional parameter, a POE::Session object or ID. If this parameter is not
 supplied, it will default to the currently active session. Returns a
 hash, with a signal name as the key and the event the session generates
 as the value.
@@ -885,7 +939,8 @@ as the value.
 sub signals_watched_by_session {
 	my $self = shift;
 	my $session = shift || $self->current_session();
-	my %sigs = $poe_kernel->_data_sig_watched_by_session($session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	my %sigs = $poe_kernel->_data_sig_watched_by_session($sid);
 
 	my %ret;
 	foreach my $k (keys %sigs) {
@@ -928,12 +983,13 @@ sub signal_watchers {
 
 =head2 is_signal_watched_by_session
 
+  if($api->is_signal_watched_by_session($signal_name, $session_id)) { }
   if($api->is_signal_watched_by_session($signal_name, $session)) { }
   if($api->is_signal_watched_by_session($signal_name)) { }
 
 Determine if a given session is explicitly watching a signal. Takes one
 mandatory parameter, a signal name. Takes one optional parameter, a
-POE::Session object. If this parameter is not provided, it will default
+POE::Session object or ID. If this parameter is not provided, it will default
 to the currently active session. Returns a boolean.
 
 =cut
@@ -942,7 +998,8 @@ sub is_signal_watched_by_session {
 	my $self = shift;
 	my $signal = shift or return undef;
 	my $session = shift || $self->current_session();
-	return $poe_kernel->_data_sig_is_watched_by_session($signal, $session->ID);
+    my $sid = ref $session ? $session->ID : $session;
+	return $poe_kernel->_data_sig_is_watched_by_session($signal, $sid);
 }
 # }}}
 

@@ -12,7 +12,7 @@ POE debugging.
 
 =head1 WARNING
 
-B<This version of this module is certified against POE version 1.293 and
+B<This version of this module is certified against POE version 1.300 and
 above. It will fail on any other POE version.>
 
 B<Further, this module requires perl v5.6.1 or above.>

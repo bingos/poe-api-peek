@@ -9,9 +9,16 @@ use Test::More tests => 10;
 
 use_ok('POE::API::Peek');
 
-my $api = POE::API::Peek->new();
 
-POE::Session->create(
+SKIP: {
+
+  my $ver = $POE::VERSION;
+  $ver =~ s/_.+$//;
+  skip "POE version less than 1.350 required for these tests", 9 unless $ver < '1.350';
+
+  my $api = POE::API::Peek->new();
+
+  POE::Session->create(
     inline_states => {
         _start => \&_start,
         _stop => \&_stop,
@@ -19,9 +26,12 @@ POE::Session->create(
 
     },
     heap => { api => $api },
-);
+  );
 
-POE::Kernel->run();
+  POE::Kernel->run();
+}
+
+exit 0;
 
 ###############################################
 
